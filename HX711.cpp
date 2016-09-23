@@ -43,14 +43,14 @@ void HX711::set_gain(byte gain) {
 	read();
 }
 
-long HX711::read() {
+int32_t HX711::read() {
 	// wait for the chip to become ready
 	while (!is_ready()) {
 		// Will do nothing on Arduino but prevent resets of ESP8266 (Watchdog Issue)
 		yield();
 	}
 
-    unsigned long value = 0;
+    int32_t value = 0;
     byte data[3] = { 0 };
     byte filler = 0x00;
 
@@ -65,17 +65,9 @@ long HX711::read() {
 		digitalWrite(PD_SCK, LOW);
 	}
 
-    // Datasheet indicates the value is returned as a two's complement value
-    // Flip all the bits
-    data[2] = ~data[2];
-    data[1] = ~data[1];
-    data[0] = ~data[0];
-
     // Replicate the most significant bit to pad out a 32-bit signed integer
     if ( data[2] & 0x80 ) {
-        filler = 0xFF;
-    } else if ((0x7F == data[2]) && (0xFF == data[1]) && (0xFF == data[0])) {
-        filler = 0xFF;
+        filler = 0xff;
     } else {
         filler = 0x00;
     }
@@ -86,8 +78,7 @@ long HX711::read() {
             | static_cast<unsigned long>(data[1]) << 8
             | static_cast<unsigned long>(data[0]) );
 
-    // ... and add 1
-    return static_cast<long>(++value);
+    return value;
 }
 
 long HX711::read_average(byte times) {
